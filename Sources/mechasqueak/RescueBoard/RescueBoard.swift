@@ -34,7 +34,6 @@ struct PlatformExpansion: Codable, Hashable {
 
 actor RescueBoard {
     var rescues: [Int: Rescue] = [:]
-    let queue = OperationQueue()
     var isSynced = true
     var syncTimer: RepeatedTask?
     var lastSignalsReceived: [PlatformExpansion: Date] = [:]
@@ -78,7 +77,9 @@ actor RescueBoard {
     }
     
     func sync () async throws {
-        self.queue.cancelAllOperations()
+        for (_, rescue) in rescues {
+            rescue.updates.cancelAllOperations()
+        }
         guard configuration.general.drillMode == false else {
             return
         }

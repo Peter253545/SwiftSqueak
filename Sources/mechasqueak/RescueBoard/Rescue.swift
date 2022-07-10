@@ -62,6 +62,7 @@ class Rescue {
     var synced: Bool = false
     var uploaded: Bool
     var uploadOperation: RescueCreateOperation? = nil
+    var updates = OperationQueue()
 
     init? (fromAnnouncer message: IRCPrivateMessage) {
         guard let match = Rescue.announcerExpression.findFirst(in: message.message) else {
@@ -457,6 +458,8 @@ class Rescue {
     }
     
     func close (firstLimpet: Rat? = nil, paperworkOnly: Bool = false) async throws {
+        self.updates.waitUntilAllOperationsAreFinished()
+        
         let wasInactive = self.status == .Inactive
         self.status = .Closed
         if paperworkOnly == false {
@@ -556,6 +559,8 @@ class Rescue {
     }
     
     func trash (reason: String) async throws {
+        self.updates.waitUntilAllOperationsAreFinished()
+        
         let wasInactive = self.status == .Inactive
         self.status = .Closed
         self.outcome = .Purge
@@ -689,8 +694,8 @@ class Rescue {
                     continuation.resume(throwing: error)
                 }
                 
-                board.queue.addOperation(operation)
                 self.uploadOperation = operation
+                self.uploadOperation?.start()
             }
         }
         
@@ -717,7 +722,7 @@ class Rescue {
                 continuation.resume(throwing: error)
             }
             
-            board.queue.addOperation(operation)
+            self.updates.addOperation(operation)
         }
     }
     
